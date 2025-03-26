@@ -40,8 +40,7 @@ INSTALLED_APPS = [
     'sparc',
     'theme',
     'tailwind',
-    'django_browser_reload',
-    'tite'
+    'django_browser_reload'
 ]
 
 MIDDLEWARE = [
