@@ -1,0 +1,53 @@
+{% extends "index.html" %}
+
+{% block content %}
+<div class="bg-gray-100 p-10">
+    <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-lg">
+        <h2 class="text-2xl font-bold mb-4">Top Real Estate Sales</h2>
+        <table class="w-full border-collapse border border-gray-300">
+            <thead>
+                <tr class="bg-gray-200">
+                    <th class="border border-gray-300 p-2">Rank</th>
+                    <th class="border border-gray-300 p-2">Property</th>
+                    <th class="border border-gray-300 p-2">Price</th>
+                </tr>
+            </thead>
+            <tbody id="salesTable">
+                <!-- Data will be inserted dynamically with JS -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const salesData = [
+            { property: "Luxury Villa", price: 2500000 },
+            { property: "Penthouse Suite", price: 1800000 },
+            { property: "Beach House", price: 2200000 },
+            { property: "Downtown Apartment", price: 950000 },
+            { property: "Suburban Home", price: 750000 }
+        ];
+
+        function populateTable() {
+            const tableBody = document.getElementById("salesTable");
+            tableBody.innerHTML = "";
+            salesData.sort((a, b) => b.price - a.price);
+
+            salesData.forEach((sale, index) => {
+                const row = `
+                    <tr class="border border-gray-300">
+                        <td class="border border-gray-300 p-2 text-center">${index + 1}</td>
+                        <td class="border border-gray-300 p-2">${sale.property}</td>
+                        <td class="border border-gray-300 p-2 text-right">$${sale.price.toLocaleString()}</td>
+                    </tr>
+                `;
+                tableBody.innerHTML += row;
+            });
+        }
+
+        populateTable();
+    });
+</script>
+
+{% endblock %}
