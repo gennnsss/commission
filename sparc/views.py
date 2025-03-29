@@ -1,6 +1,9 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
+from django.contrib import messages
+from .forms import *
+from .models import *
 
 def home(request):
     return render(request, 'index.html')
@@ -27,22 +30,15 @@ def signout(request):
 
 def signup(request):
     if request.method == "POST":
-        username = request.POST["username"]
-        email = request.POST["email"]
-        password1 = request.POST["password1"]
-        password2 = request.POST["password2"]
-
-        if password1 != password2:
-            return render(request, "signup.html", {"error": "Passwords do not match"})
-        
-        if User.objects.filter(username=username).exists():
-            return render(request, "signup.html", {"error": "Username already exists"})
-
-        user = User.objects.create_user(username=username, email=email, password=password1)
-        login(request, user)
-        return redirect("signin")
-
-    return render(request, "signup.html")
+        form = SignUpForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            messages.success(request, "Account created! Please wait for admin approval.")
+            return redirect("signin")  # Redirect to login page
+    else:
+        form = SignUpForm()
+    
+    return render(request, "signup.html", {"form": form})
 
 def profile(request):
     return render(request, 'profile.html', {})
@@ -50,3 +46,22 @@ def profile(request):
 def dashboard(request):
     return render(request, 'dashboard.html', {})
 
+def approve(request):
+    accounts = Profile.objects.filter(is_approved=False)  # Get only unapproved users
+    context = {
+        'accounts': accounts,
+    }
+    return render(request, 'approve.html', context)
+
+def approve_user(request, profile_id):
+    profile = get_object_or_404(Profile, id=profile_id)
+    profile.is_approved = True
+    profile.save()
+    messages.success(request, f"{profile.user.username} has been approved!")
+    return redirect('approve')
+
+def reject_user(request, profile_id):
+    profile = get_object_or_404(Profile, id=profile_id)
+    profile.user.delete()  # Deletes the user and profile
+    messages.error(request, f"User {profile.user.username} has been declined.")
+    return redirect('approve')
