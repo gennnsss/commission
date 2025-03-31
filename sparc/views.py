@@ -4,6 +4,10 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from .forms import *
 from .models import *
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponseForbidden
+from django.db.models import Sum
+
 
 def home(request):
     return render(request, 'index.html')
@@ -24,6 +28,7 @@ def signin(request):
 
     return render(request, "signin.html")
 
+@login_required
 def signout(request):
     logout(request)
     return redirect("signin")
@@ -40,11 +45,40 @@ def signup(request):
     
     return render(request, "signup.html", {"form": form})
 
+@login_required
 def profile(request):
     return render(request, 'profile.html', {})
 
+
+@login_required
 def dashboard(request):
-    return render(request, 'dashboard.html', {})
+    user_profile = Profile.objects.get(user=request.user)
+
+    # Get all sales from approved agents
+    sales = Sale.objects.filter(agent__is_approved=True).order_by('-price')
+
+    # Get all approved agents with their total sales volume
+    agents = Profile.objects.filter(is_approved=True).annotate(
+        sales_volume=Sum('sales__price')
+    ).order_by('-sales_volume')
+
+    form = SaleForm(request.POST or None)  # Initialize form
+
+    if request.method == 'POST':
+        if form.is_valid():
+            form.save()  # ✅ Save directly since 'agent' is now included
+            return redirect('dashboard')  # Refresh the page
+        else:
+            print("Form errors:", form.errors)  # Debugging
+
+    return render(request, 'dashboard.html', {
+        'sales': sales,
+        'agents': agents,
+        'form': form,
+        'user_profile': user_profile
+    })
+
+
 
 def approve(request):
     accounts = Profile.objects.filter(is_approved=False)  # Get only unapproved users

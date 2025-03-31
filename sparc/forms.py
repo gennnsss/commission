@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
-from .models import Profile
+from .models import *
 
 # Role choices
 ROLE_CHOICES = [
@@ -35,3 +35,15 @@ class SignUpForm(forms.ModelForm):
             user.save()
             Profile.objects.create(user=user, role=self.cleaned_data["role"])  # Create Profile
         return user
+
+
+class SaleForm(forms.ModelForm):
+    class Meta:
+        model = Sale
+        fields = ['property_id', 'property_name', 'price', 'agent'] 
+
+    def __init__(self, *args, **kwargs):
+        super(SaleForm, self).__init__(*args, **kwargs)
+        
+        # ✅ Only show approved agents in the dropdown
+        self.fields['agent'].queryset = Profile.objects.filter(is_approved=True)

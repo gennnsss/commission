@@ -1,104 +1,123 @@
 {% extends "index.html" %}
+{% block content %}
+{% load humanize %}
 {% load static %}
 
-{% block content %}
+<div class="flex flex-col md:flex-row gap-6">
+    <!-- 🔹 Top Sales Section -->
+    <div class="bg-white p-6 rounded-lg shadow-lg flex-[2]">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-bold text-blue-800">Top Sales</h2>
+            <!-- Add Sale Button -->
+            <button onclick="openModal()" class="bg-green-600 text-white px-4 py-2 rounded-md shadow-md hover:bg-green-700">
+                + Add Sale
+            </button>
+        </div>
 
-<div class="max-w-6xl mx-auto">
-    <div class="flex justify-between items-center mb-4">
-        <h2 class="text-2xl font-bold text-blue-800">Real Estate Sales & Agents</h2>
-        <button id="addSaleBtn" class="bg-green-700 text-white px-4 py-2 rounded-lg">Add Sale</button>
+        <table class="w-full border-collapse border border-gray-300">
+            <thead>
+                <tr class="bg-green-700 text-white">
+                    <th class="border border-gray-300 p-2">Property ID</th>
+                    <th class="border border-gray-300 p-2">Property</th>
+                    <th class="border border-gray-300 p-2">Price</th>
+                    <th class="border border-gray-300 p-2">Agent</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sale in sales %}
+                <tr class="border border-gray-300">
+                    <td class="border border-gray-300 p-2 text-center">{{ sale.property_id }}</td>
+                    <td class="border border-gray-300 p-2">{{ sale.property_name }}</td>
+                    <td class="border border-gray-300 p-2 text-right">₱ {{ sale.price|intcomma }}</td>
+                    <td class="border border-gray-300 p-2">{{ sale.agent.user.username }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center p-4 text-gray-500">No sales recorded yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-    
-    <div class="flex flex-col md:flex-row gap-6">
-        <!-- Top Sales Section -->
-        <div class="bg-white p-6 rounded-lg shadow-lg flex-[2]">
-            <h2 class="text-2xl font-bold mb-4 text-center text-blue-800">Top Real Estate Sales</h2>
-            <table class="w-full border-collapse border border-gray-300">
-                <thead>
-                    <tr class="bg-green-700 text-white">
-                        <th class="border border-gray-300 p-2">Rank</th>
-                        <th class="border border-gray-300 p-2">Property</th>
-                        <th class="border border-gray-300 p-2">Price</th>
-                    </tr>
-                </thead>
-                <tbody id="salesTable">
-                </tbody>
-            </table>
-        </div>
-        
-        <!-- Top Agents Section -->
-        <div class="bg-white p-6 rounded-lg shadow-lg flex-1 self-start">
-            <h2 class="text-2xl font-bold mb-4 text-center text-blue-800">Top Real Estate Agents</h2>
-            <table class="w-full border-collapse border border-gray-300">
-                <thead>
-                    <tr class="bg-green-700 text-white">
-                        <th class="border border-gray-300 p-2">Rank</th>
-                        <th class="border border-gray-300 p-2">Agent</th>
-                        <th class="border border-gray-300 p-2">Name</th>
-                        <th class="border border-gray-300 p-2">Sales</th>
-                    </tr>
-                </thead>
-                <tbody id="agentsTable">
-                </tbody>
-            </table>
-        </div>
+
+    <!-- 🔹 Top Agents Section -->
+    <div class="bg-white p-6 rounded-lg shadow-lg flex-1">
+        <h2 class="text-2xl font-bold mb-4 text-center text-blue-800">Top Agents</h2>
+        <table class="w-full border-collapse border border-gray-300">
+            <thead>
+                <tr class="bg-green-700 text-white">
+                    <th class="border border-gray-300 p-2">Rank</th>
+                    <th class="border border-gray-300 p-2">Agent</th>
+                    <th class="border border-gray-300 p-2">Team</th>
+                    <th class="border border-gray-300 p-2">Total Sales</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for agent in agents %}
+                <tr class="border border-gray-300">
+                    <td class="border border-gray-300 p-2 text-center">{{ forloop.counter }}</td>
+                    <td class="border border-gray-300 p-2 text-center">
+                        <img src="{{ agent.image.url }}" 
+                             alt="{{ agent.user.username }}" class="w-12 h-12 rounded-full mx-auto">
+                        <div class="text-center">{{ agent.user.username }}</div>
+                    </td>
+                    <td class="border border-gray-300 p-2 text-center">{{ agent.team.name }}</td>
+                    <td class="border border-gray-300 p-2 text-right">₱ {{ agent.sales_volume|intcomma }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center p-4 text-gray-500">No agents found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 
-<!-- Modal for adding sales -->
-<div id="addSaleModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center">
+<!-- 🔹 Modal Popup for Adding Sales -->
+<div id="saleModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
     <div class="bg-white p-6 rounded-lg shadow-lg w-96">
-        <h2 class="text-xl font-bold mb-4">Add New Sale</h2>
-        <label class="block mb-2">Property Name</label>
-        <input type="text" id="propertyName" class="w-full p-2 border border-gray-300 rounded mb-2">
-        <label class="block mb-2">Price</label>
-        <input type="number" id="propertyPrice" class="w-full p-2 border border-gray-300 rounded mb-4">
-        <div class="flex justify-end">
-            <button id="closeModal" class="mr-2 bg-gray-400 text-white px-4 py-2 rounded-lg">Cancel</button>
-            <button id="saveSale" class="bg-green-700 text-white px-4 py-2 rounded-lg">Save</button>
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold">Add New Sale</h2>
+            <button onclick="closeModal()" class="text-gray-600 hover:text-gray-900">&times;</button>
         </div>
+
+        <form method="POST" action="{% url 'dashboard' %}">
+            {% csrf_token %}
+            <div class="mb-4">
+                <label class="block text-gray-700">Property Name</label>
+                {{ form.property_name }}
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700">Property ID</label>
+                {{ form.property_id }}
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700">Price</label>
+                {{ form.price }}
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700">Agent</label>
+                {{ form.agent }}
+            </div>
+            
+            <div class="flex justify-end">
+                <button type="button" onclick="closeModal()" class="bg-gray-500 text-white px-4 py-2 rounded-md mr-2">Cancel</button>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Save</button>
+            </div>
+        </form>
     </div>
 </div>
 
+<!-- 🔹 JavaScript for Modal -->
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        const salesData = [];
+    function openModal() {
+        document.getElementById('saleModal').classList.remove('hidden');
+    }
 
-        function populateSalesTable() {
-            const tableBody = document.getElementById("salesTable");
-            tableBody.innerHTML = "";
-            salesData.sort((a, b) => b.price - a.price);
-
-            salesData.forEach((sale, index) => {
-                const row = `
-                    <tr class="border border-gray-300">
-                        <td class="border border-gray-300 p-2 text-center">${index + 1}</td>
-                        <td class="border border-gray-300 p-2">${sale.property}</td>
-                        <td class="border border-gray-300 p-2 text-right">$${sale.price.toLocaleString()}</td>
-                    </tr>
-                `;
-                tableBody.innerHTML += row;
-            });
-        }
-
-        document.getElementById("addSaleBtn").addEventListener("click", function() {
-            document.getElementById("addSaleModal").classList.remove("hidden");
-        });
-
-        document.getElementById("closeModal").addEventListener("click", function() {
-            document.getElementById("addSaleModal").classList.add("hidden");
-        });
-
-        document.getElementById("saveSale").addEventListener("click", function() {
-            const propertyName = document.getElementById("propertyName").value;
-            const propertyPrice = parseFloat(document.getElementById("propertyPrice").value);
-            if (propertyName && propertyPrice) {
-                salesData.push({ property: propertyName, price: propertyPrice });
-                populateSalesTable();
-                document.getElementById("addSaleModal").classList.add("hidden");
-            }
-        });
-    });
+    function closeModal() {
+        document.getElementById('saleModal').classList.add('hidden');
+    }
 </script>
 
 {% endblock %}
