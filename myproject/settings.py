@@ -41,7 +41,6 @@ INSTALLED_APPS = [
     'theme',
     'tailwind',
     'django_browser_reload',
-    'tite'
 ]
 
 MIDDLEWARE = [

@@ -1,35 +1,70 @@
 {% extends "index.html" %}
+{% load static %}
 
 {% block content %}
-<div class="bg-gray-100 p-10">
-    <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-lg">
-        <h2 class="text-2xl font-bold mb-4">Top Real Estate Sales</h2>
-        <table class="w-full border-collapse border border-gray-300">
-            <thead>
-                <tr class="bg-gray-200">
-                    <th class="border border-gray-300 p-2">Rank</th>
-                    <th class="border border-gray-300 p-2">Property</th>
-                    <th class="border border-gray-300 p-2">Price</th>
-                </tr>
-            </thead>
-            <tbody id="salesTable">
-                <!-- Data will be inserted dynamically with JS -->
-            </tbody>
-        </table>
+
+<div class="max-w-6xl mx-auto">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-bold text-blue-800">Real Estate Sales & Agents</h2>
+        <button id="addSaleBtn" class="bg-green-700 text-white px-4 py-2 rounded-lg">Add Sale</button>
+    </div>
+    
+    <div class="flex flex-col md:flex-row gap-6">
+        <!-- Top Sales Section -->
+        <div class="bg-white p-6 rounded-lg shadow-lg flex-[2]">
+            <h2 class="text-2xl font-bold mb-4 text-center text-blue-800">Top Real Estate Sales</h2>
+            <table class="w-full border-collapse border border-gray-300">
+                <thead>
+                    <tr class="bg-green-700 text-white">
+                        <th class="border border-gray-300 p-2">Rank</th>
+                        <th class="border border-gray-300 p-2">Property</th>
+                        <th class="border border-gray-300 p-2">Price</th>
+                    </tr>
+                </thead>
+                <tbody id="salesTable">
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Top Agents Section -->
+        <div class="bg-white p-6 rounded-lg shadow-lg flex-1 self-start">
+            <h2 class="text-2xl font-bold mb-4 text-center text-blue-800">Top Real Estate Agents</h2>
+            <table class="w-full border-collapse border border-gray-300">
+                <thead>
+                    <tr class="bg-green-700 text-white">
+                        <th class="border border-gray-300 p-2">Rank</th>
+                        <th class="border border-gray-300 p-2">Agent</th>
+                        <th class="border border-gray-300 p-2">Name</th>
+                        <th class="border border-gray-300 p-2">Sales</th>
+                    </tr>
+                </thead>
+                <tbody id="agentsTable">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for adding sales -->
+<div id="addSaleModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-96">
+        <h2 class="text-xl font-bold mb-4">Add New Sale</h2>
+        <label class="block mb-2">Property Name</label>
+        <input type="text" id="propertyName" class="w-full p-2 border border-gray-300 rounded mb-2">
+        <label class="block mb-2">Price</label>
+        <input type="number" id="propertyPrice" class="w-full p-2 border border-gray-300 rounded mb-4">
+        <div class="flex justify-end">
+            <button id="closeModal" class="mr-2 bg-gray-400 text-white px-4 py-2 rounded-lg">Cancel</button>
+            <button id="saveSale" class="bg-green-700 text-white px-4 py-2 rounded-lg">Save</button>
+        </div>
     </div>
 </div>
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        const salesData = [
-            { property: "Luxury Villa", price: 2500000 },
-            { property: "Penthouse Suite", price: 1800000 },
-            { property: "Beach House", price: 2200000 },
-            { property: "Downtown Apartment", price: 950000 },
-            { property: "Suburban Home", price: 750000 }
-        ];
+        const salesData = [];
 
-        function populateTable() {
+        function populateSalesTable() {
             const tableBody = document.getElementById("salesTable");
             tableBody.innerHTML = "";
             salesData.sort((a, b) => b.price - a.price);
@@ -46,7 +81,23 @@
             });
         }
 
-        populateTable();
+        document.getElementById("addSaleBtn").addEventListener("click", function() {
+            document.getElementById("addSaleModal").classList.remove("hidden");
+        });
+
+        document.getElementById("closeModal").addEventListener("click", function() {
+            document.getElementById("addSaleModal").classList.add("hidden");
+        });
+
+        document.getElementById("saveSale").addEventListener("click", function() {
+            const propertyName = document.getElementById("propertyName").value;
+            const propertyPrice = parseFloat(document.getElementById("propertyPrice").value);
+            if (propertyName && propertyPrice) {
+                salesData.push({ property: propertyName, price: propertyPrice });
+                populateSalesTable();
+                document.getElementById("addSaleModal").classList.add("hidden");
+            }
+        });
     });
 </script>
 
