@@ -33,12 +33,18 @@ class Profile(models.Model):
         return f"{self.user.username} - {self.role} - {self.team.name if self.team else 'No Team'}"
     
 class Sale(models.Model):
+    STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('cancelled', 'Cancelled'),
+    ]
+
     property_id = models.CharField(max_length=255)
     property_name = models.CharField(max_length=255)
     price = models.DecimalField(max_digits=12, decimal_places=2)
     agent = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='sales')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active')  # New field
 
     def __str__(self):
-        return f"{self.property_name} - ₱{self.price:,}"
+        return f"{self.property_name} - ₱{self.price:,} ({self.get_status_display()})"
     
 

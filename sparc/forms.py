@@ -13,6 +13,7 @@ class SignUpForm(forms.ModelForm):
     password1 = forms.CharField(widget=forms.PasswordInput, label="Password")
     password2 = forms.CharField(widget=forms.PasswordInput, label="Confirm Password")
     role = forms.ChoiceField(choices=ROLE_CHOICES, required=True, label="Select Role")
+    team = forms.ModelChoiceField(queryset=Team.objects.all(), required=False, label="Select Team")
 
     class Meta:
         model = User

@@ -12,6 +12,9 @@ from django.db.models import Sum
 def home(request):
     return render(request, 'index.html')
 
+def navbar(request):
+    return render(request, 'navbar.html')
+
 def signin(request):
     if request.user.is_authenticated:
         return render(request, "signin.html")
@@ -45,12 +48,12 @@ def signup(request):
     
     return render(request, "signup.html", {"form": form})
 
-@login_required
+@login_required(login_url='signin')  # Redirects if not logged in
 def profile(request):
-    return render(request, 'profile.html', {})
+    return render(request, 'profile.html')
 
 
-@login_required
+@login_required(login_url='signin')
 def dashboard(request):
     user_profile = Profile.objects.get(user=request.user)
 
@@ -79,7 +82,7 @@ def dashboard(request):
     })
 
 
-
+@login_required(login_url='signin')
 def approve(request):
     accounts = Profile.objects.filter(is_approved=False)  # Get only unapproved users
     context = {
