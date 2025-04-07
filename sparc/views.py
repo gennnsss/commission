@@ -7,6 +7,12 @@ from .models import *
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 from django.db.models import Sum
+from django.urls import reverse
+from django.http import HttpResponseRedirect
+from .models import SalesData
+from decimal import Decimal, InvalidOperation
+from datetime import datetime
+
 
 
 def home(request):
@@ -102,3 +108,119 @@ def reject_user(request, profile_id):
     profile.user.delete()  # Deletes the user and profile
     messages.error(request, f"User {profile.user.username} has been declined.")
     return redirect('approve')
+
+def developers(request):
+    # Example data for sales_data
+    sales_data = [
+        {'active_sales': 1500.75, 'cancelled_sales': 200.50, 'developer': 'John Doe'},
+        {'active_sales': 2500.00, 'cancelled_sales': 300.00, 'developer': 'Jane Smith'},
+        {'active_sales': 1800.25, 'cancelled_sales': 150.75, 'developer': 'Alice Johnson'},
+    ]
+    return render(request, 'developers.html', {'sales_data': sales_data})
+
+sales_data = []
+
+
+def sales_report_view(request):
+    selected_month = request.GET.get("month")  # Get the selected month from the dropdown
+    selected_developer = request.GET.get("developer")  # Get the selected developer from the dropdown
+    sales_data = SalesData.objects.all()
+
+    if selected_month and selected_month.isdigit():  # Check if a specific month is selected
+        sales_data = sales_data.filter(date__month=int(selected_month))
+
+    if selected_developer:
+        sales_data = sales_data.filter(developer=selected_developer)
+       
+    # Calculate monthly sales for the graph
+    monthly_sales = SalesData.objects.values('date__month').annotate(
+        total_active_sales=Sum('active_sales'),
+        total_cancelled_sales=Sum('cancelled_sales')
+    ).order_by('date__month')  # Include all months with data and order them
+
+    # Prepare data for the graph
+    months_with_data = [entry['date__month'] for entry in monthly_sales]
+    active_sales_data = [entry['total_active_sales'] for entry in monthly_sales]
+    cancelled_sales_data = [entry['total_cancelled_sales'] for entry in monthly_sales]
+    
+    if request.method == "POST":
+        if "input_data" in request.POST:
+            try:
+                # Validate and convert input data
+                active_sales = Decimal(request.POST.get("active_sales", "0").replace(",", "").strip())
+                cancelled_sales = Decimal(request.POST.get("cancelled_sales", "0").replace(",", "").strip())
+                developer = request.POST.get("developer", "").strip()
+                date_str = request.POST.get("date", "").strip()
+
+                # Validate and parse the date
+                if not date_str:
+                    raise ValueError("Date is required.")
+                date = datetime.strptime(date_str, "%Y-%m-%d").date()
+
+                # Save to the database
+                SalesData.objects.create(
+                    active_sales=active_sales,
+                    cancelled_sales=cancelled_sales,
+                    developer=developer,
+                    date=date,
+                )
+                messages.success(request, "Sales data has been successfully saved.")
+                return redirect(f"{reverse('sales_report')}?month={selected_month}")
+            except (InvalidOperation, ValueError) as e:
+                messages.error(request, f"Invalid input: {e}")
+                return redirect(f"{reverse('sales_report')}?month={selected_month}")
+
+        elif "edit_data" in request.POST:
+            edit_id = int(request.POST.get("edit_id"))
+            request.session["edit_id"] = edit_id
+            return redirect(f"{reverse('sales_report')}?month={selected_month}")
+
+        elif "save_edit" in request.POST:
+            try:
+                edit_id = request.session.get("edit_id")
+                if edit_id is not None:
+                    sales_data = SalesData.objects.get(id=edit_id)
+                    sales_data.active_sales = Decimal(request.POST.get("active_sales", "0").replace(",", "").strip())
+                    sales_data.cancelled_sales = Decimal(request.POST.get("cancelled_sales", "0").strip())
+                    sales_data.developer = request.POST.get("developer", "").strip()
+                    date_str = request.POST.get("date", "").strip()
+
+                    # Validate and parse the date
+                    if not date_str:
+                        raise ValueError("Date is required.")
+                    sales_data.date = datetime.strptime(date_str, "%Y-%m-%d").date()
+
+                    sales_data.save()
+                    del request.session["edit_id"]
+                messages.success(request, "Sales data has been successfully updated.")
+                return redirect(f"{reverse('sales_report')}?month={selected_month}")
+            except (InvalidOperation, ValueError) as e:
+                messages.error(request, f"Invalid input: {e}")
+                return redirect(f"{reverse('sales_report')}?month={selected_month}")
+
+        elif "delete_data" in request.POST:
+            delete_id = int(request.POST.get("delete_id"))
+            SalesData.objects.filter(id=delete_id).delete()
+            messages.success(request, "Sales data has been successfully deleted.")
+            return redirect(f"{reverse('sales_report')}?month={selected_month}")
+
+    # Check if editing mode is active
+    edit_id = request.session.get("edit_id")
+    edit_data = SalesData.objects.filter(id=edit_id).first() if edit_id else None
+
+    developers = SalesData.objects.values_list('developer', flat=True).distinct()
+
+    return render(request, "sales_report.html", {
+        "sales_data": sales_data,
+        "edit_data": edit_data,
+        "selected_month": selected_month,
+        "selected_developer": selected_developer,
+        "months_with_data": months_with_data,  # Pass months with data to the template
+        "active_sales_data": active_sales_data,  # Pass active sales data to the template
+        "cancelled_sales_data": cancelled_sales_data,  # Pass cancelled sales data to the template
+        "developers": developers,
+    })
+
+def commission(request):
+    # Add your logic for the commission view here
+    return render(request, 'commission.html')

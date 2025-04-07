@@ -12,9 +12,12 @@ urlpatterns = [
     path('signup/', views.signup, name='signup'),
     path('profile/', views.profile, name='profile'), 
     path('dashboard/', views.dashboard, name='dashboard'),
-    path('approve/', views.approve, name='approve'), 
+    path('commission/', views.commission, name='commission'),
+    path('approve/', views.approve, name='approve'),
     path('approve-user/<int:profile_id>/', approve_user, name='approve_user'),
-    path('reject-user/<int:profile_id>/', reject_user, name='reject_user'), # Admin view for user approval
+    path('reject-user/<int:profile_id>/', reject_user, name='reject_user'), 
+    path('sales-report/', views.sales_report_view, name='sales_report'),  # New URL pattern
+
 ]
 
 if settings.DEBUG:

@@ -1,0 +1,287 @@
+{% extends "index.html" %}
+
+{% block content %}
+
+{% load humanize %}
+
+<div class="max-w-4xl mx-auto">
+    <h1 class="text-5xl font-bold text-center mb-6">Developers Sales Report</h1>
+    
+        <!-- Month Filter -->
+        <form method="GET" class="mb-4 text-center">
+            <div class="flex flex-wrap justify-center items-center gap-4">
+                <!-- Developer Filter -->
+                <div>
+                    <label for="developer" class="block text-gray-700 font-medium mb-2">Select Developer:</label>
+                    <select name="developer" id="developer" class="p-2 border border-gray-300 rounded-lg">
+                        <option value="" {% if not selected_developer %}selected{% endif %}>All Developers</option>
+                        {% for developer in developers %}
+                        <option value="{{ developer }}" {% if selected_developer == developer %}selected{% endif %}>
+                            {{ developer }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+        
+                <!-- Month Filter -->
+                <div>
+                    <label for="month" class="block text-gray-700 font-medium mb-2">Select Month:</label>
+                    <select name="month" id="month" class="p-2 border border-gray-300 rounded-lg">
+                        <option value="" {% if not selected_month %}selected{% endif %}>All Months</option>
+                        <option value="1" {% if selected_month == "1" %}selected{% endif %}>January</option>
+                        <option value="2" {% if selected_month == "2" %}selected{% endif %}>February</option>
+                        <option value="3" {% if selected_month == "3" %}selected{% endif %}>March</option>
+                        <option value="4" {% if selected_month == "4" %}selected{% endif %}>April</option>
+                        <option value="5" {% if selected_month == "5" %}selected{% endif %}>May</option>
+                        <option value="6" {% if selected_month == "6" %}selected{% endif %}>June</option>
+                        <option value="7" {% if selected_month == "7" %}selected{% endif %}>July</option>
+                        <option value="8" {% if selected_month == "8" %}selected{% endif %}>August</option>
+                        <option value="9" {% if selected_month == "9" %}selected{% endif %}>September</option>
+                        <option value="10" {% if selected_month == "10" %}selected{% endif %}>October</option>
+                        <option value="11" {% if selected_month == "11" %}selected{% endif %}>November</option>
+                        <option value="12" {% if selected_month == "12" %}selected{% endif %}>December</option>
+                    </select>
+                </div>
+        
+                <!-- Filter Button -->
+                <div class="mt-6">
+                    <button type="submit" class="px-4 py-2 bg-[#222689] text-white rounded-lg hover:bg-[#222689]">
+                        Filter
+                    </button>
+                </div>
+            </div>
+        </form>
+
+          <div class="text-right mt-1">
+        <button onclick="toggleForm()" class="px-4 py-2 bg-[#FF9132] text-white rounded-lg hover:bg-[#FF9132]">
+            {% if edit_data %} Cancel Edit {% else %} Add New Sales Data {% endif %}
+        </button>
+    </div>
+    
+
+    <!-- Display success message if any -->
+    {% if success_message %}
+    <div class="mt-4 text-center text-green-600 font-medium">
+        {{ success_message }}
+    </div>
+{% endif %}
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.js"></script>
+   
+<br> <br>
+    <!-- Form to input or edit sales data -->
+    <form method="POST" id="salesForm" class="max-w-lg mx-auto bg-white p-6 rounded-lg shadow-md" style="display: {% if edit_data %}block{% else %}none{% endif %};">
+        {% csrf_token %}
+        <div class="mb-4">
+            <label for="active_sales" class="block text-gray-700 font-medium">Active Sales:</label>
+            <input type="number" step="0.01" name="active_sales" id="active_sales" required
+                class="w-full mt-1 p-2 border border-gray-300 rounded-lg"
+                value="{% if edit_data %}{{ edit_data.active_sales }}{% else %}{% endif %}">
+        </div>
+    
+        <div class="mb-4">
+            <label for="cancelled_sales" class="block text-gray-700 font-medium">Cancelled Sales:</label>
+            <input type="number" step="0.01" name="cancelled_sales" id="cancelled_sales" required
+                class="w-full mt-1 p-2 border border-gray-300 rounded-lg"
+                value="{% if edit_data %}{{ edit_data.cancelled_sales }}{% else %}{% endif %}">
+        </div>
+    
+        <div class="mb-4">
+            <label for="developer" class="block text-gray-700 font-medium">Developer:</label>
+            <input type="text" name="developer" id="developer" required
+                class="w-full mt-1 p-2 border border-gray-300 rounded-lg"
+                value="{% if edit_data %}{{ edit_data.developer }}{% else %}{% endif %}">
+        </div>
+    
+        <div class="mb-4">
+            <label for="date" class="block text-gray-700 font-medium">Date:</label>
+            <input type="date" name="date" id="date" required
+                class="w-full mt-1 p-2 border border-gray-300 rounded-lg"
+                value="{% if edit_data %}{{ edit_data.date|date:'Y-m-d' }}{% else %}{% endif %}">
+        </div>
+    
+        <div class="text-center">
+            {% if edit_data %}
+            <button type="submit" name="save_edit" class="px-4 py-2 bg-[#FF9132] text-white rounded-lg hover:bg-[#FF9132]">
+                Save Changes
+            </button>
+            {% else %}
+            <button type="submit" name="input_data" class="px-4 py-2 bg-[#222689] text-white rounded-lg hover:bg-[#222689]">
+                Submit
+            </button>
+            {% endif %}
+        </div>
+    </form>
+
+<br>
+    
+        <!-- Sales Data Table -->
+{% if sales_data %}
+<div class="overflow-x-auto">
+    <table class="min-w-full bg-white border border-gray-300 rounded-lg shadow-md">
+        <thead class="bg-gray-200">
+            <tr>
+                <th class="px-4 py-2 text-left text-gray-700 font-medium border-b">Active Sales</th>
+                <th class="px-4 py-2 text-left text-gray-700 font-medium border-b">Cancelled Sales</th>
+                <th class="px-4 py-2 text-left text-gray-700 font-medium border-b">Developers</th>
+                <th class="px-4 py-2 text-left text-gray-700 font-medium border-b">Date</th>
+                <th class="px-4 py-2 text-left text-gray-700 font-medium border-b">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for data in sales_data %}
+            <tr class="hover:bg-gray-100">
+              
+                <td class="px-4 py-2 border-b">₱{{ data.active_sales|intcomma }}</td>
+                <td class="px-4 py-2 border-b">₱{{ data.cancelled_sales|intcomma }}</td>
+                <td class="px-4 py-2 border-b">{{ data.developer }}</td>
+                <td class="px-4 py-2 border-b">{{ data.date }}</td>
+                <td class="px-4 py-2 border-b">
+                    <!-- Edit and Delete Buttons -->
+                    <form method="POST" class="inline-block">
+                        {% csrf_token %}
+                        <input type="hidden" name="edit_id" value="{{ data.id }}">
+                        <button type="submit" name="edit_data" class="px-2 py-1 bg-[#222689] text-white rounded hover:bg-[#1b1f5e]">
+                            Edit
+                        </button>
+                    </form>
+                    <form method="POST" class="inline-block">
+                        {% csrf_token %}
+                        <input type="hidden" name="delete_id" value="{{ data.id }}">
+                        <button type="submit" name="delete_data" class="px-2 py-1 bg-[#FF9132] text-white rounded hover:bg-[#FF9132]">
+                            Delete
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="text-center text-gray-500">No sales data available.</p>
+{% endif %}
+
+
+  
+    <hr class="my-6">
+
+    <!-- Bar Graphs Section -->
+<h1 class="text-5xl font-bold text-center mb-4">Sales Analytics</h1>
+<div class="max-w-12xl mx-auto flex flex-row justify-between gap-4">
+    <!-- Developers Sales Analytics -->
+    <div class="w-1/2">
+        <h3 class="text-2xl font-semibold text-center mb-1">Developers Sales Analytics</h3>
+        <canvas id="salesChart" width="400" height="300"></canvas>
+    </div>
+
+    <!-- Monthly Sales Analytics -->
+    <div class="w-1/2">
+        <h3 class="text-2xl font-semibold text-center mb-1">Monthly Sales Analytics</h3>
+        <canvas id="monthlySalesChart" width="400" height="300"></canvas>
+    </div>
+</div>
+
+<script>
+    // JavaScript function to toggle the visibility of the form
+    function toggleForm() {
+        const form = document.getElementById("salesForm");
+        form.style.display = form.style.display === "none" ? "block" : "none";
+    }
+
+    // Prepare data for the Developers Sales Analytics chart
+    const labels = [{% for data in sales_data %}"{{ data.developer }}",{% endfor %}];
+    const activeSalesData = [{% for data in sales_data %}{{ data.active_sales }},{% endfor %}];
+    const cancelledSalesData = [{% for data in sales_data %}{{ data.cancelled_sales }},{% endfor %}];
+
+    const ctx = document.getElementById('salesChart').getContext('2d');
+    const salesChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Active Sales',
+                    data: activeSalesData,
+                    backgroundColor: '#222689',
+                    borderColor: '#222689',
+                    borderWidth: 1,
+                },
+                {
+                    label: 'Cancelled Sales',
+                    data: cancelledSalesData,
+                    backgroundColor: '#FF9132',
+                    borderColor: '#FF9132',
+                    borderWidth: 1,
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                },
+            },
+        },
+    });
+
+    // Prepare data for the Monthly Sales Analytics chart
+    const months = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    ];
+
+    const monthsWithData = [
+        {% for month in months_with_data %}
+            months[{{ month }} - 1],  // Convert month number to month name
+        {% endfor %}
+    ];
+
+    const monthlyActiveSales = [
+        {% for sales in active_sales_data %}
+            {{ sales|default:0 }},
+        {% endfor %}
+    ];
+
+    const monthlyCancelledSales = [
+        {% for sales in cancelled_sales_data %}
+            {{ sales|default:0 }},
+        {% endfor %}
+    ];
+
+    const monthlyCtx = document.getElementById('monthlySalesChart').getContext('2d');
+    const monthlySalesChart = new Chart(monthlyCtx, {
+        type: 'bar',
+        data: {
+            labels: monthsWithData, // Use only months with data
+            datasets: [
+                {
+                    label: 'Active Sales',
+                    data: monthlyActiveSales,
+                    backgroundColor: '#222689',
+                    borderColor: '#222689',
+                    borderWidth: 1,
+                },
+                {
+                    label: 'Cancelled Sales',
+                    data: monthlyCancelledSales,
+                    backgroundColor: '#FF9132',
+                    borderColor: '#FF9132',
+                    borderWidth: 1,
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                },
+            },
+        },
+    });
+</script>
+{% endblock %}

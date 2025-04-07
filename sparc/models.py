@@ -47,4 +47,12 @@ class Sale(models.Model):
     def __str__(self):
         return f"{self.property_name} - ₱{self.price:,} ({self.get_status_display()})"
     
+    
+class SalesData(models.Model):
+    active_sales = models.DecimalField(max_digits=100, decimal_places=2)
+    cancelled_sales = models.DecimalField(max_digits=100, decimal_places=2)
+    developer = models.CharField(max_length=255)
+    date = models.DateField()  # Add a date field for monthly monitoring
 
+    def __str__(self):
+        return f"{self.developer} - Active Sales: {self.active_sales}, Cancelled Sales: {self.cancelled_sales}"
